@@ -1,0 +1,24 @@
+[package]
+name = "k64f_hal"
+version = "0.1.0"
+authors = ["miguel"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cortex-m = "0.5.0"
+embedded-hal = "0.2.0"
+nb = "0.1.0"
+k64 = "0.1.0"
+
+[dependencies.void]
+default-features = false
+version = "1.0.2"
+
+[dependencies.cast]
+default-features = false
+version = "0.2.2"
+
+[features]
+rt = ["k64/rt"]
