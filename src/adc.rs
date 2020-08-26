@@ -1,0 +1,1 @@
+use embedded_hal::adc::{Channel, OneShot};
