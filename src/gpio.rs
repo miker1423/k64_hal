@@ -154,7 +154,7 @@ macro_rules! gpio {
                 use cortex_m::interrupt::CriticalSection;
 
                 use super::{
-                    Alternative, GpioExt, Input, OpenDrain, Output, Floating, PullUp, PullDown,
+                    Alternative, GpioExt, Input, OpenDrain, Output, Floating,
                     AF0, AF1, AF2, AF3, AF4, AF5, AF6, AF7,
                     Pin, GpioRegExt,
                 };
@@ -184,77 +184,84 @@ macro_rules! gpio {
                     }
 
                     impl<MODE> $PXi<MODE> {
-                        pub fn enable(self, _cs: CriticalSection) -> Self {
-                            Self::_set_alternate_function($i, 1);
+                        pub fn enable(self, _cs: &CriticalSection) -> Self {
+                            Self::_set_alternate_function(1);
                             self
                         }
 
-                        pub fn disable(self, _cs: CriticalSection) -> Self {
-                            Self::_set_alternate_function($i, 0);
+                        pub fn disable(self, _cs: &CriticalSection) -> Self {
+                            Self::_set_alternate_function(0);
                             self
                         }
 
-                        fn _set_alternate_function(index: usize, mode: u8) {
-                            unsafe { (&*$PORTX::ptr()) }.$pcri.write(|w| w.mux().bits(mode));
+                        fn _set_alternate_function(mode: u8) {
+                            unsafe { (&*$PORTX::ptr()) }.$pcri.modify(|_, w| w.mux().bits(mode));
                         }
 
                         pub fn into_alternate_af0(
                             self, _cs: &CriticalSection
                         ) -> $PXi<Alternative<AF0>> {
-                            Self::_set_alternate_function($i, 0);
+                            Self::_set_alternate_function(0);
                             $PXi { _mode: PhantomData }
                         }
 
                         pub fn into_alternate_af1(
                             self, _cs: &CriticalSection
                         ) -> $PXi<Alternative<AF1>> {
-                            Self::_set_alternate_function($i, 1);
+                            Self::_set_alternate_function(1);
                             $PXi { _mode: PhantomData }
                         }
 
                         pub fn into_alternate_af2(
                             self, _cs: &CriticalSection
                         ) -> $PXi<Alternative<AF2>> {
-                            Self::_set_alternate_function($i, 2);
+                            Self::_set_alternate_function(2);
                             $PXi { _mode: PhantomData }
                         }
 
                         pub fn into_alternate_af3(
                             self, _cs: &CriticalSection
                         ) -> $PXi<Alternative<AF3>> {
-                            Self::_set_alternate_function($i, 3);
+                            Self::_set_alternate_function(3);
                             $PXi { _mode: PhantomData }
                         }
 
                         pub fn into_alternate_af4(
                             self, _cs: &CriticalSection
                         ) -> $PXi<Alternative<AF4>> {
-                            Self::_set_alternate_function($i, 4);
+                            Self::_set_alternate_function(4);
                             $PXi { _mode: PhantomData }
                         }
 
                         pub fn into_alternate_af5(
                             self, _cs: &CriticalSection
                         ) -> $PXi<Alternative<AF5>> {
-                            Self::_set_alternate_function($i, 5);
+                            Self::_set_alternate_function(5);
                             $PXi { _mode: PhantomData }
                         }
 
                         pub fn into_alternate_af6(
                             self, _cs: &CriticalSection
                         ) -> $PXi<Alternative<AF6>> {
-                            Self::_set_alternate_function($i, 6);
+                            Self::_set_alternate_function(6);
                             $PXi { _mode: PhantomData }
                         }
 
                         pub fn into_alternate_af7(
                             self, _cs: &CriticalSection
                         ) -> $PXi<Alternative<AF7>> {
-                            Self::_set_alternate_function($i, 7);
+                            Self::_set_alternate_function(7);
+                            $PXi { _mode: PhantomData }
+                        }
+
+                        pub fn into_output(
+                            self, _cs: &CriticalSection
+                        ) -> $PXi<Output<Floating>> {
+                            let gpio = unsafe { &(*$GPIOX::ptr()) };
+                            gpio.pddr.modify(|_, w| unsafe { w.bits(1 << $i) });
                             $PXi { _mode: PhantomData }
                         }
                     }
-
 
                     impl<MODE> $PXi<Output<MODE>> {
                         pub fn downgrade(self) -> Pin<Output<MODE>> {
