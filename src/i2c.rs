@@ -89,7 +89,13 @@ where
                 .iicif().set_bit()
         );
 
+        self.set_baudrate(speed);
+
         self.i2c.c1.modify(|_, w| w.iicen().set_bit());
+    }
+
+    fn set_baudrate(&self, speed: u32){
+
     }
 
     fn check_and_clear_error_flags(&self) -> Result<i2c0::s::R, Self::Error> {
@@ -99,12 +105,6 @@ where
             self.i2c.s.modify(|_, w| w.arbl().set_bit());
             return Err(Error::ARBITRATION);
         }
-        if status.busy().bit_is_set() {
-            return Err(Error::BUS);
-        }
-        if status.rxak().bit_is_set() {
-            return Err(Error::NACK);
-        }
 
         Ok(status)
     }
@@ -112,7 +112,12 @@ where
 
 trait I2cCommon {
     type Error;
-    fn write_bytes(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error>;
+
+    fn start_sequence(&self) -> Result<(), Self::Error>;
+
+    fn stop_sequence(&self) -> Result<(), Self::Error>;
+
+    fn write_bytes(&self, address: u8, bytes: &[u8]) -> Result<(), Self::Error>;
 
     fn send_byte(&self, byte: u8) -> Result<(), Self::Error>;
 
@@ -124,27 +129,41 @@ where
     I2C: Instance,
 {
     type Error = Error;
-    fn write_bytes(&mut self, address: u8, bytes: &[u8]) -> Result<(), Self::Error> {
-        self.check_and_clear_error_flags()?;
-        self.i2c.c1.modify(|_, w| w.mst().set_bit().tx().set_bit());
 
-        self.check_and_clear_error_flags()?.rxak().bit_is_set();
+
+    fn start_sequence(&self) -> Result<(), Self::Error> {
+        self.check_and_clear_error_flags()?;
+        self.i2c.c1.modify(|_, w| w.tx().set_bit().mst().set_bit());
 
         while {
-            self.check_and_clear_error_flags()?;
-            let s = self.i2c.s.read();
-            s.busy().bit_is_clear()
-        } { }
+          self.check_and_clear_error_flags()?.busy().bit_is_clear()
+        }{}
 
-        self.i2c.d.modify(|_, w| unsafe { w.data().bits(address << 1)  });
+        Ok(())
+    }
 
-        while self.check_and_clear_error_flags()?.rxak().bit_is_set() {}
+    fn stop_sequence(&self) -> Result<(), Self::Error> {
         self.check_and_clear_error_flags()?;
+        self.i2c.c1.modify(|_, w| w.mst().clear_bit());
+
+        while {
+            self.check_and_clear_error_flags()?.busy().bit_is_set()
+        }{}
+
+        Ok(())
+    }
+
+    fn write_bytes(&self, address: u8, bytes: &[u8]) -> Result<(), Self::Error> {
+        self.start_sequence();
+
+        self.send_byte(address << 1);
+
         for b in bytes {
             self.send_byte(*b);
         }
 
-        self.i2c.c1.modify(|_, w| w.mst().clear_bit().tx().clear_bit().txak().clear_bit());
+        self.stop_sequence();
+
         Ok(())
     }
 
@@ -152,10 +171,12 @@ where
         while {
             self.check_and_clear_error_flags()?.tcf().bit_is_clear()
         }{}
+        self.i2c.c1.modify(|_, w| w.tx().set_bit());
         self.i2c.d.modify(|_, w| unsafe { w.data().bits(byte) });
         while {
-            self.check_and_clear_error_flags()?.tcf().bit_is_clear()
+            self.check_and_clear_error_flags()?.iicif().bit_is_clear()
         }{}
+        self.i2c.s.modify(|_, w| w.iicif().set_bit());
 
         Ok(())
     }
