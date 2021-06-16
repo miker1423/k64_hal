@@ -261,6 +261,13 @@ macro_rules! gpio {
                             gpio.pddr.modify(|_, w| unsafe { w.bits(1 << $i) });
                             $PXi { _mode: PhantomData }
                         }
+
+                        pub fn into_open_drain(
+                            self, _cs: &CriticalSection
+                        ) -> $PXi<Output<OpenDrain>> {
+
+                            $PXi { _mode: PhantomData }
+                        }
                     }
 
                     impl<MODE> $PXi<Output<MODE>> {
