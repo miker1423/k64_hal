@@ -40,7 +40,7 @@ i2c_pins! {
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
-pub enum Error {
+pub enum I2cError {
     OVERRUN,
     NACK,
     TIMEOUT,
@@ -110,15 +110,28 @@ where
         self.i2c.f.modify(|_, w| unsafe { w.icr().bits(44) });
     }
 
-    fn check_and_clear_error_flags(&self) -> Result<i2c0::s::R, Error> {
+    fn check_and_clear_error_flags(&self) -> Result<i2c0::s::R, I2cError> {
         let status = self.i2c.s.read();
 
         if status.arbl().bit_is_set() {
             self.i2c.s.modify(|_, w| w.arbl().set_bit());
-            return Err(Error::ARBITRATION);
+            return Err(I2cError::ARBITRATION);
         }
 
         Ok(status)
+    }
+}
+
+impl<I2C, PINS> Write for I2c<I2C, PINS>
+where
+    I2C: Instance
+{
+    type Error = I2cError;
+
+    fn write(&mut self, address: u8, buffer: &[u8]) -> Result<(), Self::Error> {
+        self.write_bytes(address, buffer);
+
+        self.stop_sequence()
     }
 }
 
@@ -140,7 +153,7 @@ impl<I2C, PINS> I2cCommon for I2c<I2C, PINS>
 where
     I2C: Instance,
 {
-    type Error = Error;
+    type Error = I2cError;
 
 
     fn start_sequence(&self) -> Result<(), Self::Error> {
@@ -173,8 +186,6 @@ where
         for b in bytes {
             self.send_byte(*b);
         }
-
-        self.stop_sequence();
 
         Ok(())
     }
