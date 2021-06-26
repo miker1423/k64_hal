@@ -1,7 +1,7 @@
 use crate::pac::I2C0;
 use crate::pac::{i2c0, sim};
 use core::ops::Deref;
-use crate::pac::SIM;
+use crate::gpio::*;
 use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 
 pub struct I2c<I2C: Instance, PINS> {
@@ -32,6 +32,13 @@ macro_rules! i2c_pins {
     }
 }
 
+i2c_pins! {
+    I2C0 => {
+        scl => porte::PE24<AlternativeOD<AF5>>,
+        sda => porte::PE25<AlternativeOD<AF5>>,
+    }
+}
+
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Error {
     OVERRUN,
@@ -52,9 +59,9 @@ pub trait Instance: private::Sealed + Deref<Target = i2c0::RegisterBlock> {
 }
 
 macro_rules! i2c {
-    ($($I2C: ident, $scgcx: ident, $i2c: ident)+) => {
+    ($I2C: ident, $scgcx: ident, $i2c: ident) => {
         impl private::Sealed for $I2C {}
-        impl Instance for $I2C for $I2C {
+        impl Instance for $I2C {
             unsafe fn enable_clock(sim: &sim::RegisterBlock) {
                 sim.$scgcx.modify(|_, w| w.$i2c().set_bit());
             }
@@ -62,11 +69,16 @@ macro_rules! i2c {
     }
 }
 
+i2c!(I2C0, scgc4, i2c0);
+
 impl<I2C, PINS> I2c<I2C, PINS>
 where
     I2C: Instance
 {
-    pub fn new(i2c: I2C, pins: PINS, speed: u32, sim: &sim::RegisterBlock) -> Self {
+    pub fn new(i2c: I2C, pins: PINS, speed: u32, sim: &sim::RegisterBlock) -> Self
+    where
+        PINS: Pins<I2C>
+    {
         unsafe { I2C::enable_clock(sim) };
 
         let i2c = I2c {i2c, pins};
@@ -94,11 +106,11 @@ where
         self.i2c.c1.modify(|_, w| w.iicen().set_bit());
     }
 
-    fn set_baudrate(&self, speed: u32){
-
+    fn set_baudrate(&self, _speed: u32){
+        self.i2c.f.modify(|_, w| unsafe { w.icr().bits(44) });
     }
 
-    fn check_and_clear_error_flags(&self) -> Result<i2c0::s::R, Self::Error> {
+    fn check_and_clear_error_flags(&self) -> Result<i2c0::s::R, Error> {
         let status = self.i2c.s.read();
 
         if status.arbl().bit_is_set() {
@@ -183,5 +195,17 @@ where
 
     fn recv_byte(&self) -> Result<u8, Self::Error> {
         Ok(0)
+    }
+}
+
+impl<I2C, PINS> Write for I2c<I2C, PINS>
+where
+    I2C: Instance
+{
+    type Error = Error;
+
+    fn write(&mut self, address: u8, bytes: &[u8]) -> Result<(), Self::Error> {
+        self.write_bytes(address, bytes)?;
+        self.stop_sequence()
     }
 }
