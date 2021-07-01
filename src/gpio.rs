@@ -258,6 +258,83 @@ macro_rules! gpio {
                             $PXi { _mode: PhantomData }
                         }
 
+                        pub fn into_af0_outputdrain(
+                            self, _cs: &CriticalSection
+                        ) -> $PXi<AlternativeOD<AF0>> {
+                            Self::_set_alternate_function(0);
+                            let port = unsafe { &(*$PORTX::ptr()) };
+                            port.$pcri.modify(|_, w|
+                                unsafe { w.bits(0x23) }
+                            );
+                            $PXi { _mode: PhantomData }
+                        }
+
+                        pub fn into_af1_outputdrain(
+                            self, _cs: &CriticalSection
+                        ) -> $PXi<AlternativeOD<AF1>> {
+                            Self::_set_alternate_function(1);
+                            let port = unsafe { &(*$PORTX::ptr()) };
+                            port.$pcri.modify(|_, w|
+                                unsafe { w.bits(0x23) }
+                            );
+                            $PXi { _mode: PhantomData }
+                        }
+
+                        pub fn into_af2_outputdrain(
+                            self, _cs: &CriticalSection
+                        ) -> $PXi<AlternativeOD<AF2>> {
+                            Self::_set_alternate_function(2);
+                            let port = unsafe { &(*$PORTX::ptr()) };
+                            port.$pcri.modify(|_, w|
+                                unsafe { w.bits(0x23) }
+                            );
+                            $PXi { _mode: PhantomData }
+                        }
+
+                        pub fn into_af3_outputdrain(
+                            self, _cs: &CriticalSection
+                        ) -> $PXi<AlternativeOD<AF3>> {
+                            Self::_set_alternate_function(3);
+                            let port = unsafe { &(*$PORTX::ptr()) };
+                            port.$pcri.modify(|_, w|
+                                unsafe { w.bits(0x23) }
+                            );
+                            $PXi { _mode: PhantomData }
+                        }
+
+                        pub fn into_af4_outputdrain(
+                            self, _cs: &CriticalSection
+                        ) -> $PXi<AlternativeOD<AF4>> {
+                            Self::_set_alternate_function(4);
+                            let port = unsafe { &(*$PORTX::ptr()) };
+                            port.$pcri.modify(|_, w|
+                                unsafe { w.bits(0x23) }
+                            );
+                            $PXi { _mode: PhantomData }
+                        }
+
+                        pub fn into_af5_outputdrain(
+                            self, _cs: &CriticalSection
+                        ) -> $PXi<AlternativeOD<AF5>> {
+                            Self::_set_alternate_function(5);
+                            let port = unsafe { &(*$PORTX::ptr()) };
+                            port.$pcri.modify(|_, w|
+                                unsafe { w.bits(0x23) }
+                            );
+                            $PXi { _mode: PhantomData }
+                        }
+
+                        pub fn into_af6_outputdrain(
+                            self, _cs: &CriticalSection
+                        ) -> $PXi<AlternativeOD<AF6>> {
+                            Self::_set_alternate_function(6);
+                            let port = unsafe { &(*$PORTX::ptr()) };
+                            port.$pcri.modify(|_, w|
+                                unsafe { w.bits(0x23) }
+                            );
+                            $PXi { _mode: PhantomData }
+                        }
+
                         pub fn into_output(
                             self, _cs: &CriticalSection
                         ) -> $PXi<Output<Floating>> {

@@ -75,7 +75,10 @@ impl<I2C, PINS> I2c<I2C, PINS>
 where
     I2C: Instance
 {
-    pub fn new(i2c: I2C, pins: PINS, speed: u32, sim: &sim::RegisterBlock) -> Self {
+    pub fn new(i2c: I2C, pins: PINS, speed: u32, sim: &sim::RegisterBlock) -> Self
+    where
+        PINS: Pins<I2C>
+    {
         unsafe { I2C::enable_clock(sim) };
 
         let i2c = I2c {i2c, pins};
